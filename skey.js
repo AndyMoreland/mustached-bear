@@ -96,6 +96,10 @@ function naive_chain() {
 
 /******** Pebble-Based Hash Chain Implementation (Jakobsson's algorithm) ********/
 
+function log2(x) {
+	return Math.log(x) / Math.log(2);
+}
+
 
 function pebble_chain() {
 
@@ -104,17 +108,67 @@ function pebble_chain() {
   };
 
   chain.initialize = function(num_iterations, seed) {
-    // TODO
+		if (num_iterations % 2 != 0) {
+			console.error("Invalid num_iterations");
+		}
+
 		chain.state = {
 			position: 0,
 			num_iterations: num_iterations,
-      start: hash(seed)
+      start: hash(seed),
+			pebbles: []
     }
+
+		chain.state.current_hash = chain.state.start;
+		chain.layout_initial_pebbles();
+
+		var initial_hash = chain.state.current_hash;
+		
+		chain.advance();
+		
+		return initial_hash;
   }
 
+	chain.layout_initial_pebbles = function () {
+		var num_pebbles = log2(chain.state.num_iterations);
+		var cur_hash = chain.state.start;
+
+		for (var i = chain.state.num_iterations; i >= 1; i--) {
+			// might be off-by-1 here
+			cur_hash = hash(cur_hash);
+			if (Math.floor(log2(i)) == log2(i)) {
+				chain.state.pebbles.push(cur_hash);
+			}
+		}
+
+		// add a dummy pebble for convenience sake!
+		chain.state.pebbles[num_pebbles] = chain.state.start;
+
+		chain.state.pebbles = chain.state.pebbles.reverse();
+		chain.state.current_hash = cur_hash;
+	}
+	
   chain.advance = function() {
-    // TODO
-    throw "pebble_chain.advance() is not implemented yet.";
+		chain.state.current_hash = chain.state.pebbles[0];
+		var has_moved = false;
+		
+		for (var i = log2(chain.state.num_iterations) - 1; i >= 0; i--) {
+			if (chain.state.current_hash == chain.state.pebbles[i]) {
+				if (!has_moved) {
+					chain.state.pebbles[i] = chain.state.pebbles[i+1];
+				} else {
+					var current_hash = chain.state.pebbles[i+1];
+					for (var j = 0; j < Math.pow(i, 2); j++) { current_hash = hash(current_hash); }
+					chain.state.pebbles[i] = current_hash;
+				}
+
+				has_moved = true;
+			} else {
+				has_moved = false;
+			}
+		}
+
+		return chain.state.current_hash;
   }
 
   // Returns a string.
@@ -140,4 +194,3 @@ module.exports.pebble_chain = pebble_chain;
 
 
 /********* End of Original File ********/
-
