@@ -150,6 +150,8 @@ function pebble_chain() {
 	
   chain.advance = function() {
 		chain.state.current_hash = chain.state.pebbles[0];
+		console.log("------------------------- advancing chain --------------------------");
+		chain.state.current_hash = chain.state.pebbles[0];
 		var has_moved = false;
 		
 		for (var i = log2(chain.state.num_iterations) - 1; i >= 0; i--) {
@@ -158,16 +160,18 @@ function pebble_chain() {
 					chain.state.pebbles[i] = chain.state.pebbles[i+1];
 				} else {
 					var current_hash = chain.state.pebbles[i+1];
-					for (var j = 0; j < Math.pow(i, 2); j++) { current_hash = hash(current_hash); }
+					for (var j = 0; j < Math.pow(2, i); j++) { current_hash = hash(current_hash); }
 					chain.state.pebbles[i] = current_hash;
 				}
 
+				console.log("Moving pebble ", i);
 				has_moved = true;
 			} else {
 				has_moved = false;
 			}
 		}
 
+		console.log("------------------------- done advancing chain --------------------------");
 		return chain.state.current_hash;
   }
 
