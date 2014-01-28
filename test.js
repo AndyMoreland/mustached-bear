@@ -55,12 +55,13 @@ function test_chain(constructor, seed, num_iterations) {
   var vk = initial;
   for (var i = 0; i < num_iterations; i++) {
     var current = chain.advance();
+			
     verifyBitArray(current);
     if (! is_equal(hash(current), vk)) {
       console.log("[FAILED] Value #" + i + " is incorrect. Halting tests.");
       return;
     }
-    var vk = current;
+    var vk = current; // sketchy line
   }
   console.log("[SUCCESS] All values in the chain were correct.")
 
