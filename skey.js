@@ -13,7 +13,35 @@
  */
 
 /* 1. Briefly describe your implementation and its design choices. (e.g. What algorithm did you use? How did you structure your code? Did you do something interesting in \texttt{save}/\texttt{load}? If it's not obvious, justify the space/time used by your implementation.)
+ * Let n be the number of iterations. On initialization, we save log(n) + 1 pebbles.
  * 
+ * Pebble locations:
+ * The ith pebble is 2^i back from the initial hash for i between 0 and log(n) (inclusive). 
+ * The initial placement is done in a linear pass over the hashes. When we reach a hash index that is a power of 2, we store a pebble.
+ *
+ * When advance is called, our program returns the hash at the pebble 2^0 back from the current pebble (that is 1 back from the hash that the server should currently be holding), and 
+ * then it repositions some of the pebbles. To decide whether to reposition a given pebble at given advance, we work backwards 
+ * starting with the log-n'th pebble. We note that the 2^0 pebble holds the hash that the server 
+ * has just learned. We always remember if we reposition the last pebble. That is, when we are examining the ith pebble, 
+ * we have stored whether or not we repositioned the (i+1)th pebble.
+ *
+ * If the current pebble we are considering lines up with the 0th pebble, then we know our pebble (say the 2^i) pebble should be 2^i behind that 2^0 pebble. 
+ * We then check if the previously considered pebble, that is the pebble associated with a one larger power of two, was moved. 
+ * If the previous pebble moved, that that previous pebble had just been positioned 2^(i+1) behind the current 2^0, so we hash 2^i 
+ * times from that previous pebble and place the pebble currently being considered at that hash. If the previously considered pebble did not move,
+ * we know that the pebble being currently considered has been already moved once towards it since the last time that pebble 
+ * associated with a power of two one larger moved. Therefore, to put our currently considered pebble the correct 2^i behind 
+ * the current hash (the hash known by the server), we just set it equal to the hash carried by the pebble assosciated with 2^(i+1). 
+ * If the pebble does not line up with the 2^0 pebble, we do not move it. The 2^0 pebble will always move, 
+ * but we move it in the same fashion as the other pebbles, in relation to the currently position of the 2^1 pebble. 
+ *
+ * For the 2^i pebble, we compute 2^i hashes at most 2^(i/2) times, so the amortized runtime is O(1) for each of the log(n) + 1 pebbles,
+ * therefore the amortized runtime for Advance is O(log(n)).
+ * 
+ * Our code is structured so that when we initialize we set up the pebbles as described above, and return the hash of the pebble at 2^0
+ * When advance is called, it works as above giving the next hash and moving the pebbles as needed. Save and load are 
+ * both simple and convert current state of our program to json. Notably our state requires 
+ * only some minimal constant overhead and log(n) spaces for the pebbles.
  */
 
 /* 2. If you were designing an authentication mechanism for a hot new startup that wants to protect its users, how would you decide whether/where to use S/KEY?
@@ -22,7 +50,7 @@
  * For instance, if the user were to lose their token (phone, physical device) that displays the code, then they would be hard-locked out of the service until their identity could be verified again.
  * This is pretty horrific for trivial applications.
  *
- * If we decide that enhanced security is necessary (i.e. if we're doing some sort of email or financial application), then OTP-style authentication is a strong contender.
+ * If we decide that enhanced security is necessary (i.e. if we're doing some sort of private communications or financial application), then OTP-style authentication is a strong contender.
  * We would probably use OTP as a secondary layer. Passwords are already commonplace and add a layer of security that exists only in the user's mind:
  * even if the OTP authentication layer is compromised (i.e. the secret key is stolen, or the user's token is stolen), the password still provides a layer of protection.
  * Of course, the reason to use OTP in addition to passwords is that users have a tendency to choose weak passwords. This is mitigated with OTP authentication.
